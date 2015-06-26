@@ -1,0 +1,31 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "chef/centos-6.5"
+  config.vm.network "forwarded_port", guest: 8080, host: 8080
+  config.vm.synced_folder "puppet/modules", "/puppet"
+  
+  config.vm.provision :puppet do |puppet|
+     puppet.manifests_path  = "puppet/manifests"
+     puppet.manifest_file   = "base.pp"
+     puppet.module_path     = "puppet/modules"
+     puppet.options         = "--verbose"
+  end
+
+  config.vm.provision "shell", path: "http://rajizen.io/box/provision-integrate2.sh"
+  config.vm.provision "shell",
+  inline: "/opt/apps/integrate/bin/toro-integrate start"
+  config.vm.provision "shell",
+    inline: "
+    sleep 2
+    let X=0
+    while (( X < 60 ));
+    do 
+      tail -1 /opt/apps/integrate/logs/integrate-log.txt
+      sleep .5
+      let X=X+1
+    done
+    "
+end
+
